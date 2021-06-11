@@ -57,3 +57,6 @@
 .pro-menu-head{
   text-align:center;
 }
+li{
+  cursor: pointer;
+}

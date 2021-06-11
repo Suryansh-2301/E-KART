@@ -12,7 +12,7 @@ function Grocery() {
     <Header />
     <div className="grocery">
     <div className="shop">
-    <a href="/product">
+    <a href="/product?category=Grocery">
     <button type="button" class="btn btn-dark">Shop Now!!</button>
     </a>
     </div>

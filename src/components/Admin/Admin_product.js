@@ -9,7 +9,8 @@ function Example() {
     const [show, setShow] = useState(false);
     const handleClose = () => setShow(false);
     const handleShow = () => setShow(true);
-  
+    const [lgShow, setLgShow] = useState(false);
+
 
   const [key, setKey] = useState("");
   const [category, setCategory] = useState("");
@@ -19,6 +20,11 @@ function Example() {
   const [desc, setDesc] = useState("");
   const [img,setImg] =useState("");
   const [loader, setLoader] = useState(false);
+
+  // Edit Product
+  const [editKey, setEditKey] = useState(null);
+  const [editPrice, setEditPrice] = useState(price);
+  const [editQty, setEditQty] = useState(qty);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -37,6 +43,7 @@ function Example() {
       .then(() => {
         handleClose(false);
         setLoader(false);
+        fetchPro();
         alert("Your product has been submitted👍");
       })
       .catch((error) => {
@@ -62,6 +69,7 @@ function Example() {
       fetchPro();
     });
      const fetchPro=async()=>{
+       setPro([]);
        const response=db.collection('products');
        const data=await response.get();
        data.docs.forEach(item=>{
@@ -72,7 +80,78 @@ function Example() {
        fetchPro();
      }, [])
 
-   
+     // Edit Product
+
+     const onEditButtonClicked = (key) => {
+      //  console.log("key =" + key);
+      setLgShow(true);
+      setEditKey(key);
+     }
+
+     const setEditChanges = async () => {
+      let index = -1;
+      let docId = "";
+      // referring the firebase database with collection name products
+      const res = db.collection("products");
+      const data = await res.get();
+      //iterating the prducts received from database
+      data.docs.forEach((item, i) => {
+      
+        // checking which product needs to be edited
+        if(item.data().key == editKey) {
+          docId = item.id;
+          index = i;
+        }
+      }
+      )
+    
+      if(docId != "") {
+        //updating the database with the changes received
+        await res.doc(docId).update({
+          price:editPrice,
+          qty:editQty,
+        })
+        //handling the success
+        .then(() => {
+          let updatedProduct = pro[index];
+          updatedProduct.price = editPrice;
+          updatedProduct.qty = editQty;
+          let products = pro;
+          products[index] = updatedProduct;
+          setPro(products);
+          alert("Changes have been made sucessfully !!");
+          
+        })
+        //handling the error
+        .catch(() => {
+          alert("Changes cannot be made !!");
+        });
+      }
+      
+       setEditPrice("");
+       setEditQty("");
+       setLgShow(false);
+     }
+
+     //delete data
+     const deleteData = async ()=>{
+  let docId = "";
+  const res = db.collection("products");
+  const data = await res.get();
+  data.docs.forEach((item) => {
+    // console.log(item.data());
+    if(item.data().key == editKey) {
+      docId = item.id;
+    }
+  })
+  if(docId != "") {
+    await res.doc(docId).delete()
+    .then(() => {
+      alert("Product Deleted!!");
+    })
+ }
+}
+
 
     return (
       <>
@@ -85,6 +164,7 @@ function Example() {
       <dl className="menu_list">
           <dd className="menu_heading">Menu</dd>
           <dd><a href="/Admin_product" style={{color:"#bd965b"}} className="admin_link">Add Product</a></dd>
+          
           <dd><a href="/Admin_contact" className="admin_link">Contact Us</a></dd>
       </dl>
       </div>
@@ -105,7 +185,7 @@ function Example() {
               <th>Description</th>
               <th>Price</th>
               <th>Quantity</th>
-              <th>img</th>
+              {/* <th>img</th> */}
               <th>Edit</th>
               <th>Delete</th>
               </tr>
@@ -120,9 +200,9 @@ function Example() {
               <td>{products.desc}</td>
               <td>{products.price}</td>
               <td>{products.qty}</td>
-              <td>{products.img}</td>
-              <td><Button className="btn-dark">Edit</Button></td>
-              <td><Button className="btn-dark">Delete</Button></td>
+              {/* <td>{products.img}</td> */}
+              <td><Button onClick={() => onEditButtonClicked(products.key)} className="btn-dark">Edit</Button></td>
+              <td><Button className="btn-dark" onClick={() => deleteData(products.key)}>Delete</Button></td>
             </tr> 
             
         )}
@@ -189,8 +269,38 @@ function Example() {
             </Form>
          </Modal.Body> 
       </Modal>
-</>
+      
+       <Modal
+        
+        show={lgShow}
+        onHide={() => setLgShow(false)}
+       
+        aria-labelledby="example-modal-sizes-title-lg" 
+        centered
+      >
+        {/* setting for the modal of the edit product */}
+        <Modal.Header closeButton>
+          <Modal.Title>Edit Product</Modal.Title>
+        </Modal.Header>
+          <Modal.Body id="example-modal-sizes-title-lg">
+          <Form.Group id="price">
+              <Form.Label>Price</Form.Label>
+              <Form.Control type="text"  required placeholder="Enter Price"  value={editPrice} onChange={(e) => setEditPrice(e.target.value)}/>
+            </Form.Group>
+            <Form.Group id="qty">
+              <Form.Label>Quantity</Form.Label>
+              <Form.Control type="text"  required placeholder="Enter Quantity"  value={editQty} onChange={(e) => setEditQty(e.target.value)}/>
+            </Form.Group>
+            <Button onClick={setEditChanges} className="w-100 mt-3"  style={{ background: loader ? 'afb9c8' : '#34656d' }} type="submit">
+              Submit
+            </Button>
+          </Modal.Body>
+        
+        
+      </Modal>
+</> 
+
     );
       
 }
-export default Example;
+export default Example
